@@ -1,0 +1,11 @@
+[book]
+title = "A Tour of C++"
+authors = ["Bjarne Stroustrup"]
+language = "en"
+multilingual = false
+src = "src"
+
+[output.html]
+default-theme = "latte"
+preferred-dark-theme = "mocha"
+additional-css = ["./theme/catppuccin.css", "./theme/catppuccin-admonish.css"]
