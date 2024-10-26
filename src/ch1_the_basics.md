@@ -296,3 +296,76 @@ We use `auto` where we don't have a specific reason to mention the type explicit
 Using `auto`, we avoid redundancy and writing long type names. This is especially important in generic programming where the exact type of an object can be hard for the programmer to know and the type names can be quite long (§12.2).
 
 ## 1.5 Scope and Lifetime
+
+A declaration introduces its name into a scope:
+- _Local scope_: A name declared in a function (§1.3) or lambda (§6.3.2) is called a _local name_. Its scope extends from its point of declaration to the end of the block in which its declaration occurs. A _block_ is delimited by a `{` `}` pair. Function argument names are considered local names.
+- _Class scope_: A name is called a _member name_ (or a _class member name_) if it is defined in a class (§2.2, §2.3, Chapter 4), outside any function (§1.3), lambda (§6.3.2), or `enum class` (§2.5). Its scope extends from the opening `{` of its enclosing declaration to the end of that declaration.
+- _Namespace scope_: A name is called a _namespace member name_ if it is defined in a namsepace (§3.4), outside any function, lambda (§6.3.2), class (§2.2, §2.3, Chapter 4), or `enum class` (§2.5). Its scope extends from the point of declaration to the end of its namespace.
+
+A name not declared inside any other construct is called a _global name_ and is said to be in the _global namespace_.
+
+In addition, we can have objects without names, such as temporaries and objects created using `new` (§4.2.2). For example:
+
+```cpp
+vector<int> vec;  // vec is global (a global vector of integers)
+
+struct Record {
+    string name;  // name is a member of `Record` (a string member)
+    // ...
+};
+
+void fct(int arg) { // fct is global, arg is local
+    string motto {"Who dares win"}; // motto is local
+    auto p = new Record{"Hume"};    // p points to an unnamed `Record`
+}
+```
+
+An object must be constructed (initialized) before it is used and will be destroyed at the end of its scope. For a namespace object the point of destruction is the end of the program. For a member, the point of destruction is determined by the point of destruction of the object of which it is a member. An object created by `new` "lives" until destroyed by `delete` (§4.2.2).
+
+## 1.6 Constants
+
+C++ supports two notions of immutability:
+- `const`: meaning roughly "I promise not to change this value.". This is used primarily to specify interfaces so that data can be passed to functions using pointers and references without fear of it being modified. The compiler enforces the promise made by `const`. The value of a `const` can be calculated at runtime.
+- `constexpr`: meaning roughly "to be evaluated at compile time". Tis is used primarily to specify constants, to allow placement of data in read-only memory (where it is unlikely to be corrupted), and for performance. The value of a `constexpr` must be calculated by the compiler.
+
+For example:
+
+```cpp
+constexpr int dmv = 17;        // dmv is named constant
+int var = 17;                  // var is not a constant
+const double sqv = sqrt(var);  // sqv is a named constant, possibly computed at runtime
+
+double sum(const vector<double>&); // sum will not modify its argument (§1.7)
+
+vector<double> v {1.2, 3.4, 4.5};  // v is not a constant
+const double s1 = sum(v);          // OK: sum(v) is evaluated at runtime
+constexpr double v2 = sum(v);      // error: sum(v) is not s constant expression
+```
+
+For a function to be usable in a _constant expression_, that is, in an expression that will be evaluated by the compiler, it must be defined `constexpr`, For example:
+
+```cpp
+constexpr double square(double x) { return x * x; }
+
+constexpr double max1 = 1.4 * square(17);  // OK: 1.4 * square(17) is a constant expression
+constexpr double max2 = 1.4 * square(var); // error: var is not a constant expression
+const double max3 = 1.4 * square(var);     // OK: may be evaluated at runtime
+```
+
+A `constexpr` function can be used for non-constant arguments, but when that is done the result is not a constant expression. We allow a `constexpr` functin to be called with non-constant-expression arguments in contexts that do not require constant expressions. That way, we don't have to define essentially the same function twice: once for constant expressions and once for variables.
+
+To be `constexpr`, a function must be rather simple and cannot have side effects and can only use informatin passed to it as arguments. In particular, it cannot modify non-local variables, but it can have loops and use its own local variables. For example:
+
+```cpp
+constexpr double nth(double x, int n) {  // assume n >= 0
+    double res = 1;
+    int i = 0;
+    while (i < n) {
+        res *= x;
+        ++i;
+    }
+    return res;
+}
+```
+
+In a few places, constant expressions are required by language rules (e.g., array bounds (§1.7), case labels (§1.8), template value arguments (§6.2), and constants declared using `constexpr`). In other cases, compile-time evaluation is important for performance. Independently of performance issues, the notion of immutability (an object with an unchangeable state) is an important design concern.
