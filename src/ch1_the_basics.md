@@ -369,3 +369,155 @@ constexpr double nth(double x, int n) {  // assume n >= 0
 ```
 
 In a few places, constant expressions are required by language rules (e.g., array bounds (§1.7), case labels (§1.8), template value arguments (§6.2), and constants declared using `constexpr`). In other cases, compile-time evaluation is important for performance. Independently of performance issues, the notion of immutability (an object with an unchangeable state) is an important design concern.
+
+## 1.7 Pointers, Arrays and References
+
+The most fundamental collection of data is contiguously allocated sequence of elements of the same type, called an _array_. This is basically what the hardware offers. An array of elements of type `char` can be declaired like this:
+
+```cpp
+char v[6];   // array of 6 characters
+```
+
+Similarly, a pointer can be declared like this:
+
+```cpp
+char* p;     // pointer to character
+```
+
+In declarations, `[ ]` means "array of" and `*` means "pointer to". All arrays have `0` as their lower bound, so `v` has six elements, `v[0]` to `v[5]`. The size of an array must be a constant expression (§1.6). A pointer variable can hold the address of an object of the appropriate type:
+
+```cpp
+char* p = &v[3];     // `p` points to `v`'s fourth element
+char x = *p;         //  `*p` is the object that `p` points to
+```
+
+In an expression, prefix unary `*` means "contents of" and prefix unary `&` means "address of". We can represent the result of the initialized definition graphically:
+
+__POINTER TO v[3] GRAPHICS__
+
+Consider copyinh ten elements from one array to another:
+
+```cpp
+void copy_fct() {
+    int v1[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    int v2[10];       // to become a copy of `v1`
+
+    for (auto i = 0; i != 10; ++i) // copy elements
+        v2[i] = v1[i];
+    // ...
+}
+```
+
+This `for`-statement can be read as "set `i` to zero; while `i` is not `10`, copy the `i`th element and increment `i`". When applied to an integer or floating-point variable, the increment operator `++`, simply adds `1`. C++ also offrs a simpler `for`-statement, called a range-`for`-statement, for loops that traverse a sequence in the simplest way:
+
+```cpp
+void print() {
+    int v[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    for (auto x: v) // for each `x` in `v`
+        cout << x << '\n';
+
+    for (auto x: {10, 21, 32, 43, 54, 65})
+        cout << x << '\n';
+}
+```
+
+The first range-`for`-statement can be read as "for every element of `v`, from the first to the last, place a copy in `x` and print it". Note that we don't have to specify an array bound when we initialie it with a list. The range-`for`-statement can be used for any sequence of elements (§12.1).
+
+If we didn't want to copy the values from `v` into the variable `x`, but rather just have `x` refer to an element, we could write:
+
+```cpp
+void increment() {
+    int v[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    for (auto& x: v) // add 1 to each `x` in `v`
+        ++x;
+    // ...
+}
+```
+
+In a declaration, the unary suffix `&` means "reference to". A reference is similar to a pointer, except that you don't need to use a prefix `*` to access the value reffered to by the reference. Also a reference cannot be made to refer to a different objet after its initialization.
+
+References are particularly useful for specifying function arguments. For example:
+
+```cpp
+void sort(vector<double>&);
+```
+
+By using a reference, we ensure that for a call `sort(my_vec)`, we do not copy `my_vec` and that it really is `my_vec` that is sorted and not a copy of it.
+
+When we don't want to modify an argument but still don't want the cost of copying, we can use a `const` reference (§1.6). For example:
+
+```cpp
+double sum(const vector<double>&);
+```
+
+Functions taking `const` references are very common.
+
+When used in declarations, operators (such as `&`, `*`, and `[]`) are called _declarator operators_:
+
+```cpp
+T a[n];   // `T[n]`: `a` is an array of `n` `T`s
+T* p;     // `T*`: `p` is a pointer to `T`
+T& r;     // `T&`: `r` is a ref to `T`
+T f(A);   // `T(A)`: `f` is a function taking an argument of type `A1 and returning a result of type `T`
+```
+
+### 1.7.1 The Null Pointer
+
+We try to ensure that a pointer always points to an object so that dereferencing it is valid. When we don't have an object to point to or if we need to represent the notion of "no object available" (e.g., for an end of a list), we give the pointer the value `nullptr` ("the null pointer"). There is only one `nullptr` share by all pointer types:
+
+```cpp
+double* pdf = nullptr;
+Link<Record>* lst = nullptr;  // pointer to a `Link` to a `Record`
+int x = nullptr;              // error: `nullptr` is a pointer not an integer
+```
+
+It is often wise to check that a pointer argument actually points to something:
+
+```cpp
+// count the number of occurences of `x` in `p[]`
+// p is assumed to point to a zero-terminated array of char (or to nothing)
+int count_x(const char* p, char x) {
+    if (p == nullptr)
+        return 0;
+
+    int count = 0;
+    for (; *p != 0; ++p) {
+        if (*p == x)
+            ++count;
+    }
+    return count;
+}
+```
+
+Note how we can advance a pointer to point to the next element of an array using `++` and that we can leave out the initializer in a `for`-statement if we don't need it.
+
+The definition of `count_x()` assumes that the `char*` is a _C-style string_, that is, that the pointer points to a zero-terminated array of `char`. The characters in a string literal are immutable, so to handle `count_x("Hello!")`, I declared `count_x()` a `const char*` argument.
+
+In older code, `0` or `NULL` is typically used instead of `nullptr`. However, using `nullptr` eliminates confusion between integers (such as `0` or `NULL`) and pointers (such as `nullptr).
+
+In the `count_x()` example, we are not using the initializer part of the `for`-statement, so we can use the simpler `while`-statement:
+
+```cpp
+// count the number of occurences of `x` in `p[]`
+// p is assumed to point to a zero-terminated array of char (or to nothing)
+int count_x(const char* p, char x) {
+    if (p == nullptr)
+        return 0;
+
+    int count = 0;
+    while (*p) {
+        if (*p == x)
+            ++count;
+        ++p;
+    }
+    return count;
+}
+```
+
+The `while`-statement executes until its condition becomes `false`.
+
+A test of a numeric value (e.g., `while (*p)` in `count_x()` is equivalent to comparing the value to `0` (e.g., `while (*p != 0)`). A test of a pointer value (e.g., `if (p)`) is equivalent to comparing the value to `nullptr` (e.g., `if (p != nullptr)`).
+
+There is no "null reference". A reference must refer to a valid object (and implementations assume that it does). There are obscure and clever ways to violate that rule; don't do that.
