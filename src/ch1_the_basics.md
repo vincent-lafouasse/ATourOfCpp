@@ -521,3 +521,105 @@ The `while`-statement executes until its condition becomes `false`.
 A test of a numeric value (e.g., `while (*p)` in `count_x()` is equivalent to comparing the value to `0` (e.g., `while (*p != 0)`). A test of a pointer value (e.g., `if (p)`) is equivalent to comparing the value to `nullptr` (e.g., `if (p != nullptr)`).
 
 There is no "null reference". A reference must refer to a valid object (and implementations assume that it does). There are obscure and clever ways to violate that rule; don't do that.
+
+## 1.8 Tests
+
+C++ provides a conventional set of statements for expressing selection and looping, such as `if`-statements, `switch`-statements, `while`-loops, and `for`-loops. For example, here is a simple function that prompts the user and returns a Boolean indicating the response:
+
+```cpp
+bool accept() {
+    cout << "Do you want to proceed (y/n)?\n";
+    char answer = 0;
+    cin >> answer;
+
+
+    if (answer == 'y')
+        return true;
+    return false;
+}
+```
+
+To match the `<<` output operator ("put to"), the `>>` operator ("get from") is used for input; `cin` is the standard input stream (Chapter 10). The type of the right-hand operand of `>>` determinies what input is accepted, and its right-hand operand is the target of the input operation. The `\n` character at the end of the output string represents a nweline (§1.2.1).
+
+Note that the definition of `answer` appears where it is needed (and not before that). A declaration can appear anywhere a statement can.
+
+The example could be improved by taking a `n` (for "no") anwser into account:
+
+```cpp
+bool accept2() {
+    cout << "Do you want to proceed (y/n)?\n";
+    char answer = 0;
+    cin >> answer;
+
+    switch (answer) {
+        case 'y':
+            return true;
+        case 'n':
+            return false;
+        default:
+            cout << "I'll take that for a no.\n";
+            return false;
+    }
+}
+```
+
+A `switch` statement tests a value against a set of constants. Those constants, called `case`-labels, must be distinct, and if the value tested does not match any of them, the `default` is chosen. If the value doesn't match any `case`-label and no `default` is provided, no action is taken.
+
+We don't have to exit a `case` by returning from the function that contains its `switch`-statement. Often we just want to continue execution with the statement following the `switch`-statement. We ca do that using a `break` statement. As an example, consider an overly clever, yet primitive, parser for a trivial command video game:
+
+```cpp
+void action() {
+    while (true) {
+        cout << "enter action:\n";
+        string act;
+        cin >> act;
+        Point delta {0, 0};
+
+        for (char ch: act) {
+            switch (ch) {
+                case 'u': // up
+                case 'n': // north
+                    ++delta.y;
+                    break;
+                case 'r': // right
+                case 'e': // east
+                    ++delta.x;
+                    break;
+                // more actions
+                default:
+                    cout << "I freeze!\n";
+            }
+            move(current + delta * scale);
+            update_display();
+        }
+    }
+}
+```
+
+Like a `for`-statement, an `if`-statement can introduce a variable and test it. For example:
+
+```cpp
+void do_something(vector<int>& v) {
+    if (auto n = v.size(); n != 0) {
+        // ... we get here if `n` != `0` ...
+    }
+    // ...
+}
+```
+
+Here, the integer `n` is defined for use within the `if`-statement, initialized with `v.size()`, and immediately tested by the `n != 0` condition after the semicolon. A name declared in a condition is in scope on both branches of the `if`-statement.
+
+As with the `for`-statement, the purpose of declaring a name in the condition of an `if`-statement is to keep the scope of the variable limited to improve readability and mimnimize errors.
+
+The most common case is testing a variable against `0` (or the `nullptr`). To do that, simply leave out the explicit mention of the condition. For example:
+
+```cpp
+void do_something(vector<int>& v) {
+    if (auto n = v.size()) {
+        // ... we get here if `n` != `0` ...
+    }
+    // ...
+}
+```
+
+Prefer to use this terser and simpler form when you can.
