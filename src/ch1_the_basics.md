@@ -623,3 +623,70 @@ void do_something(vector<int>& v) {
 ```
 
 Prefer to use this terser and simpler form when you can.
+
+## 1.9 Mapping to Hardware
+
+C++ offers a direct mapping to hardware. When you use one of the fundamental operations, the implementation is what the hardware offers, typically a single machine operation. For example, adding two `int`s, `x + y` executes an integer add machine instruction.
+
+A C++ implementation sees a machine's memory as a sequence of memory locations into which it can place (typed) objects and address them using pointers:
+
+__POINTER GRAPHICS__
+
+A pointer is represented in memory as a machine address, so the numeric value of `p` in this figure would be `3`. If this looks much like an array (§1.7), that's because an array is C++'s basic abstraction of "a contiguous sequence of objects in memory".
+
+The simple mapping of fundamental language constructs to hardware is crucial for the raw low-level performance for which C and C++ have been famous for decades. The basic machine model of C and C++ is based on computer hardware, rather than some form of mathematics.
+
+### 1.9.1 Assignment
+
+An assignment of a built-in type is a simple machine copy operation. Consider:
+
+```cpp
+int x = 2;
+int y = 3;
+x = y;    // `x` becomes 3
+// Note: `x == y`
+```
+
+This is obvious. We can graphically represent that like this:
+
+__GRAPHICS__
+
+Note that the two objects are independent. We can change the value of `y` without affecting the value of `x`. For example `x = 99` will not change the value of `y`. Unlike Java, C#, and other languages, but like C, that is true for all types, not just `int`s.
+
+If we want different objects to refer to the same (shared) value, we must say so. We could use pointers:
+
+```cpp
+int x = 2;
+int y = 3;
+int* p = &x;
+int* q = &y;  // now `p != q` and `*p != *q`
+p = q;        // `p` becomes `&y`; now `p == q` and `*p == *q`
+```
+
+We can represent that graphically like this:
+
+__GRAPHICS__
+
+I arbitrarily chose `88` and `92` as the addresses of the `int`s. Again, we can see that the assigned-to object gets the value from the assigned object, yielding two independent objects (here, pointers), with the same value. That is, `p = q` gives `p == q`. After `p = q`, both pointers point to `y`.
+
+A reference and a pointer both refer/point to an object and both are represented in memory as a machine address. However, the language rules for using them differ. Assignment to a reference does not change what the references refers to but assignes to the referenced object:
+
+```cpp
+int x = 2;
+int y = 3;
+int& r = x;    // `r` refers to `x`
+int& r2 = y;   // now `r2` refers to `y`
+r = r2;        // read through `r2`, write through `r`: `x` becomes `3`
+```
+
+We can represent that graphically like this:
+
+__GRAPHICS__
+
+To access the value pointed to by a pointer, you use `*`; that is automatically (implicitely) done for a reference.
+
+After `x = y`, we have `x == y` for every built-in type and well-designed user-defined type (Chapter 2) that offers `=` (assignment) and `==` (equality comparison).
+
+### 1.9.2 Initialization
+
+
