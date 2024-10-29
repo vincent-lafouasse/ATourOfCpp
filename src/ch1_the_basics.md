@@ -689,4 +689,27 @@ After `x = y`, we have `x == y` for every built-in type and well-designed user-d
 
 ### 1.9.2 Initialization
 
+Initialization differs from assignment. In general, for an assignment to work correctly, the assigned-to object must have a value. On the other hand, the task of initialization is to make an uninitialized piece of memory into a valid object. For almost all types, the effect of reading from or writing to an uninitialized variable is undefined. For built-in types, that's most obvious for references:
 
+```cpp
+int x = 7;
+int& r {x};   // bind `r` to `x` (`r` refers to `x`)
+r = 7;        // assign to whatever `r` refers to
+
+int& r2;      // error: uninitialized reference
+rs = 99;      // assign to whatever `r2` refers to
+```
+
+Fortunately, we cannot have an uninitialized reference; if we could, then that `r2 = 99` would assign `99` to some unspecified memory location; the result would eventually lead to bad results or a crash.
+
+You can use `=` to initliaze a reference but please don't let that confuse you. For example:
+
+```cpp
+int& r = x;   // bind `r` to `x`
+```
+
+This is still initialization and binds `r` to `x`, rather than any form of value copy.
+
+The distinction between initialization and assignment is also crucial to many user-defined types, such as `string` and `vector`, where an assigned-to object owns a ressource that needs to eventually be released (§5.3).
+
+The basic semantics of argument passing and function value return are that of initialization (§3.6). For example, that's how we get pass-by-reference.
